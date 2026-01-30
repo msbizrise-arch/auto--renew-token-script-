@@ -1,7 +1,7 @@
 {
   "name": "Token Renew Bot",
   "description": "Telegram Token Renew Bot",
-  "repository": "https://github.com/yourusername/yourrepo",
+  "repository": "https://github.com/msbizrise-arch/auto--renew-token-script",
   "keywords": ["telegram", "bot", "token"],
   "env": {
     "BOT_TOKEN": {
