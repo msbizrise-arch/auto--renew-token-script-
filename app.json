@@ -1,0 +1,12 @@
+{
+  "name": "Token Renew Bot",
+  "description": "Telegram Token Renew Bot",
+  "repository": "https://github.com/yourusername/yourrepo",
+  "keywords": ["telegram", "bot", "token"],
+  "env": {
+    "BOT_TOKEN": {
+      "description": "Telegram Bot Token",
+      "required": true
+    }
+  }
+}
