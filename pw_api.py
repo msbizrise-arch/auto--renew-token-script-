@@ -1,20 +1,39 @@
 import aiohttp
 import asyncio
+from urllib.parse import quote_plus
+
+BASE_API = "https://anonymouspwplayer-554b25895c1a.herokuapp.com/pw"
 
 class PWTokenService:
-    BASE_URL = "https://anonymouspwplayer-554b25895c1a.herokuapp.com/pw"
+    def __init__(self, timeout=20, retries=3):
+        self.timeout = timeout
+        self.retries = retries
 
-    @staticmethod
-    async def renew_token(old_token: str) -> str:
-        """
-        Calls PW backend API and returns renewed token
-        """
-        async with aiohttp.ClientSession() as session:
-            params = {"token": old_token}
-            async with session.get(PWTokenService.BASE_URL, params=params) as resp:
-                if resp.status != 200:
-                    raise Exception("PW API Failed")
+    async def renew_token(self, raw_token: str) -> str:
+        if not raw_token or "." not in raw_token:
+            raise ValueError("Invalid token format")
 
-                data = await resp.json()
-                # Assuming API returns {"token": "NEW_TOKEN"}
-                return data.get("token", "INVALID_RESPONSE")
+        encoded_token = quote_plus(raw_token)
+        url = f"{BASE_API}?token={encoded_token}"
+        last_error = None
+
+        for attempt in range(1, self.retries + 1):
+            try:
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
+                    async with session.get(url) as resp:
+                        print(f"[PW API] Attempt {attempt}, Status: {resp.status}")
+                        data = await resp.json()
+                        print(f"[PW API] Response: {data}")
+
+                        if isinstance(data, dict):
+                            token = data.get("token") or data.get("access_token") or data.get("data")
+                            if token and isinstance(token, str):
+                                return token.strip()
+                        raise RuntimeError("Token not found in response")
+
+            except Exception as e:
+                last_error = e
+                print(f"[PW API] Attempt {attempt} failed: {e}")
+                await asyncio.sleep(1.5 * attempt)
+
+        raise RuntimeError(f"PW API failed after {self.retries} attempts: {last_error}")
